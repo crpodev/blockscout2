@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   blockscout:
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    image: blockscout/blockscout:${DOCKER_TAG:-4.1.5}
     restart: always
     container_name: 'blockscout'
     command: 'mix do ecto.create, ecto.migrate, phx.server'
