@@ -16,13 +16,27 @@ defmodule Explorer.Counters.Helper do
     DateTime.to_unix(utc_now, :millisecond)
   end
 
-  def fetch_from_cache(key, cache_name, default \\ 0) do
+  def cache_period(env_var, default_hours) do
+    case Integer.parse(System.get_env(env_var, "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(default_hours)
+    end
+  end
+
+  def cache_period_default_in_minutes(env_var, default_minutes) do
+    case Integer.parse(System.get_env(env_var, "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.minutes(default_minutes)
+    end
+  end
+
+  def fetch_from_cache(key, cache_name) do
     case :ets.lookup(cache_name, key) do
       [{_, value}] ->
         value
 
       [] ->
-        default
+        0
     end
   end
 

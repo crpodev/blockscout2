@@ -1,10 +1,8 @@
 defmodule BlockScoutWeb.CsvExportView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.Controller, as: BlockScoutWebController
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CSVExport.Helper
 
   defp type_display_name(type) do
     case type do
@@ -16,10 +14,14 @@ defmodule BlockScoutWeb.CsvExportView do
     end
   end
 
-  defp type_download_path(nil), do: ""
-
   defp type_download_path(type) do
-    type <> "-csv"
+    case type do
+      "internal-transactions" -> :internal_transactions_csv
+      "transactions" -> :transactions_csv
+      "token-transfers" -> :token_transfers_csv
+      "logs" -> :logs_csv
+      _ -> ""
+    end
   end
 
   defp address_checksum(address_hash_string) do
@@ -27,5 +29,16 @@ defmodule BlockScoutWeb.CsvExportView do
       address_hash
       |> Address.checksum()
     end
+  end
+
+  defp default_period_start do
+    DateTime.utc_now()
+    |> Timex.shift(months: -1)
+    |> Timex.format!("{YYYY}-{0M}-{0D}")
+  end
+
+  defp default_period_end do
+    DateTime.utc_now()
+    |> Timex.format!("{YYYY}-{0M}-{0D}")
   end
 end

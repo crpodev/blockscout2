@@ -27,9 +27,3 @@ defimpl Phoenix.Param, for: Hash do
     to_string(hash)
   end
 end
-
-defimpl Phoenix.Param, for: Decimal do
-  def to_param(decimal) do
-    to_string(decimal)
-  end
-end

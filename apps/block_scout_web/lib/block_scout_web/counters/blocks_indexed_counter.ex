@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   # It is undesirable to automatically start the counter in all environments.
   # Consider the test environment: if it initiates but does not finish before a
   # test ends, that test will fail.
-  config = Application.compile_env(:block_scout_web, __MODULE__)
+  config = Application.get_env(:block_scout_web, __MODULE__)
   @enabled Keyword.get(config, :enabled)
 
   @doc """
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   @impl true
   def init(args) do
     if @enabled do
-      Task.start_link(&calculate_blocks_indexed_and_broadcast/0)
+      Task.start_link(&calculate_blocks_indexed/0)
 
       schedule_next_consolidation()
     end
@@ -35,19 +35,25 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
     {:ok, args}
   end
 
-  def calculate_blocks_indexed_and_broadcast do
-    ratio = Chain.indexed_ratio_blocks()
+  def calculate_blocks_indexed do
+    ratio = Chain.indexed_ratio()
 
-    Notifier.broadcast_indexed_ratio("blocks:indexing", ratio)
+    finished? =
+      case Decimal.cmp(ratio, 1) do
+        :lt -> false
+        _ -> Chain.finished_indexing?()
+      end
+
+    Notifier.broadcast_blocks_indexed_ratio(ratio, finished?)
   end
 
   defp schedule_next_consolidation do
-    Process.send_after(self(), :calculate_blocks_indexed_and_broadcast, :timer.minutes(5))
+    Process.send_after(self(), :calculate_blocks_indexed, :timer.minutes(5))
   end
 
   @impl true
-  def handle_info(:calculate_blocks_indexed_and_broadcast, state) do
-    calculate_blocks_indexed_and_broadcast()
+  def handle_info(:calculate_blocks_indexed, state) do
+    calculate_blocks_indexed()
 
     schedule_next_consolidation()
 

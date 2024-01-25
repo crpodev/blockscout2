@@ -3,8 +3,6 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
 
   import Mox
 
-  setup :verify_on_exit!
-
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
@@ -55,7 +53,7 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
         token: token
       )
 
-      request_zero_implementations()
+      get_eip1967_implementation()
 
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, token.contract_address_hash))
 
@@ -64,7 +62,7 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
     end
   end
 
-  def request_zero_implementations do
+  def get_eip1967_implementation do
     EthereumJSONRPC.Mox
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -96,18 +94,6 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },

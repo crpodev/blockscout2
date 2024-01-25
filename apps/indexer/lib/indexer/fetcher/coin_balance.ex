@@ -4,14 +4,14 @@ defmodule Indexer.Fetcher.CoinBalance do
   `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  alias EthereumJSONRPC.{Blocks, FetchedBalances, Utility.RangesHelper}
+  alias EthereumJSONRPC.{Blocks, FetchedBalances}
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
@@ -20,10 +20,13 @@ defmodule Indexer.Fetcher.CoinBalance do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 500
-  @default_max_concurrency 4
-
-  def batch_size, do: defaults()[:max_batch_size]
+  @defaults [
+    flush_interval: :timer.seconds(3),
+    max_batch_size: 500,
+    max_concurrency: 4,
+    task_supervisor: Indexer.Fetcher.CoinBalance.TaskSupervisor,
+    metadata: [fetcher: :coin_balance]
+  ]
 
   @doc """
   Asynchronously fetches balances for each address `hash` at the `block_number`.
@@ -53,7 +56,7 @@ defmodule Indexer.Fetcher.CoinBalance do
     end
 
     merged_init_options =
-      defaults()
+      @defaults
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
@@ -63,15 +66,11 @@ defmodule Indexer.Fetcher.CoinBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_balances(
-        initial,
-        fn address_fields, acc ->
-          address_fields
-          |> entry()
-          |> reducer.(acc)
-        end,
-        true
-      )
+      Chain.stream_unfetched_balances(initial, fn address_fields, acc ->
+        address_fields
+        |> entry()
+        |> reducer.(acc)
+      end)
 
     final
   end
@@ -84,7 +83,9 @@ defmodule Indexer.Fetcher.CoinBalance do
     unique_entries = Enum.uniq(entries)
 
     unique_filtered_entries =
-      Enum.filter(unique_entries, fn {_hash, block_number} -> RangesHelper.traceable_block_number?(block_number) end)
+      Enum.filter(unique_entries, fn {_hash, block_number} ->
+        block_number >= EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+      end)
 
     unique_entry_count = Enum.count(unique_filtered_entries)
     Logger.metadata(count: unique_entry_count)
@@ -262,15 +263,5 @@ defmodule Indexer.Fetcher.CoinBalance do
         nil
       end
     end)
-  end
-
-  defp defaults do
-    [
-      flush_interval: :timer.seconds(3),
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      task_supervisor: Indexer.Fetcher.CoinBalance.TaskSupervisor,
-      metadata: [fetcher: :coin_balance]
-    ]
   end
 end

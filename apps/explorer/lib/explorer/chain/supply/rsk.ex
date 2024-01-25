@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Supply.RSK do
 
   use Explorer.Chain.Supply
 
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias EthereumJSONRPC.FetchedBalances
@@ -16,9 +16,7 @@ defmodule Explorer.Chain.Supply.RSK do
 
   @cache_name :rsk_balance
   @balance_key :balance
-  @rsk_bridge_contract_address "0x0000000000000000000000000000000001000006"
 
-  @spec market_cap(any()) :: Decimal.t()
   def market_cap(%{usd_value: usd_value}) when not is_nil(usd_value) do
     btc = circulating()
 
@@ -27,32 +25,31 @@ defmodule Explorer.Chain.Supply.RSK do
 
   def market_cap(_), do: Decimal.new(0)
 
-  @doc "Equivalent to getting the circulating value"
+  @doc "Equivalent to getting the circulating value "
   def supply_for_days(days) do
     now = Timex.now()
 
-    base_query =
+    balances_query =
       from(balance in CoinBalance,
         join: block in Block,
         on: block.number == balance.block_number,
         where: block.consensus == true,
-        where: balance.address_hash == ^@rsk_bridge_contract_address,
-        select: %{timestamp: block.timestamp, value: balance.value}
-      )
-
-    balances_query =
-      from(q in subquery(base_query),
-        where: q.timestamp > ^Timex.shift(now, days: -days),
-        distinct: fragment("date_trunc('day', ?)", q.timestamp),
-        select: {q.timestamp, q.value}
+        where: balance.address_hash == ^"0x0000000000000000000000000000000001000006",
+        where: block.timestamp > ^Timex.shift(now, days: -days),
+        distinct: fragment("date_trunc('day', ?)", block.timestamp),
+        select: {block.timestamp, balance.value}
       )
 
     balance_before_query =
-      from(q in subquery(base_query),
-        where: q.timestamp <= ^Timex.shift(Timex.now(), days: -days),
-        order_by: [desc: q.timestamp],
+      from(balance in CoinBalance,
+        join: block in Block,
+        on: block.number == balance.block_number,
+        where: block.consensus == true,
+        where: balance.address_hash == ^"0x0000000000000000000000000000000001000006",
+        where: block.timestamp <= ^Timex.shift(Timex.now(), days: -days),
+        order_by: [desc: block.timestamp],
         limit: 1,
-        select: q.value
+        select: balance.value
       )
 
     by_day =
@@ -108,18 +105,18 @@ defmodule Explorer.Chain.Supply.RSK do
     max_number = BlockNumber.get_max()
 
     params = [
-      %{block_quantity: integer_to_quantity(max_number), hash_data: @rsk_bridge_contract_address}
+      %{block_quantity: integer_to_quantity(max_number), hash_data: "0x0000000000000000000000000000000001000006"}
     ]
 
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    json_rpc_named_argumens = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_argumens) do
       {:ok,
        %FetchedBalances{
          errors: [],
          params_list: [
            %{
-             address_hash: @rsk_bridge_contract_address,
+             address_hash: "0x0000000000000000000000000000000001000006",
              value: value
            }
          ]

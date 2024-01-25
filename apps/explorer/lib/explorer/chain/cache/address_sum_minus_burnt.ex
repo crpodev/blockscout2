@@ -42,8 +42,7 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
         rescue
           e ->
             Logger.debug([
-              "Couldn't update address sum: ",
-              Exception.format(:error, e, __STACKTRACE__)
+              "Coudn't update address sum test #{inspect(e)}"
             ])
         end
 

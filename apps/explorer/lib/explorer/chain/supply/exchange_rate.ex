@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Supply.ExchangeRate do
 
   use Explorer.Chain.Supply
 
+  alias Explorer.ExchangeRates.Token
   alias Explorer.Market
 
   def circulating do
@@ -16,6 +17,6 @@ defmodule Explorer.Chain.Supply.ExchangeRate do
   end
 
   def exchange_rate do
-    Market.get_coin_exchange_rate()
+    Market.get_exchange_rate(Explorer.coin()) || Token.null()
   end
 end

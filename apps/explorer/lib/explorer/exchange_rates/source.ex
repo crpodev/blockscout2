@@ -2,11 +2,8 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
-
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Helper
   alias HTTPoison.{Error, Response}
 
   @doc """
@@ -32,42 +29,21 @@ defmodule Explorer.ExchangeRates.Source do
     fetch_exchange_rates_request(CoinGecko, source_url, headers)
   end
 
-  @spec fetch_market_data_for_token_addresses([Hash.Address.t()]) ::
-          {:ok, %{Hash.Address.t() => %{fiat_value: float() | nil, circulating_market_cap: float() | nil}}}
-          | {:error, any}
-  def fetch_market_data_for_token_addresses(address_hashes) do
-    source_url = CoinGecko.source_url(address_hashes)
-    headers = CoinGecko.headers()
-    fetch_exchange_rates_request(CoinGecko, source_url, headers)
-  end
-
-  @spec fetch_token_hashes_with_market_data :: {:ok, [String.t()]} | {:error, any}
-  def fetch_token_hashes_with_market_data do
-    source_url = CoinGecko.source_url(:coins_list)
-    headers = CoinGecko.headers()
-
-    case http_request(source_url, headers) do
-      {:ok, result} ->
-        {:ok,
-         result
-         |> CoinGecko.format_data()}
-
-      resp ->
-        resp
-    end
-  end
-
   defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
     do: {:error, "Source URL is nil"}
 
   defp fetch_exchange_rates_request(source, source_url, headers) do
     case http_request(source_url, headers) do
-      {:ok, result} when is_map(result) ->
-        result_formatted =
-          result
-          |> source.format_data()
+      {:ok, result} = resp ->
+        if is_map(result) do
+          result_formatted =
+            result
+            |> source.format_data()
 
-        {:ok, result_formatted}
+          {:ok, result_formatted}
+        else
+          resp
+        end
 
       resp ->
         resp
@@ -77,7 +53,7 @@ defmodule Explorer.ExchangeRates.Source do
   @doc """
   Callback for api's to format the data returned by their query.
   """
-  @callback format_data(map() | list()) :: [any]
+  @callback format_data(String.t()) :: [any]
 
   @doc """
   Url for the api to query to get the market info.
@@ -90,6 +66,12 @@ defmodule Explorer.ExchangeRates.Source do
 
   def headers do
     [{"Content-Type", "application/json"}]
+  end
+
+  def decode_json(data) do
+    Jason.decode!(data)
+  rescue
+    _ -> data
   end
 
   def to_decimal(nil), do: nil
@@ -106,7 +88,11 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    if config(:source) == Explorer.ExchangeRates.Source.TokenBridge do
+      Explorer.ExchangeRates.Source.CoinGecko
+    else
+      config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+    end
   end
 
   @spec config(atom()) :: term
@@ -120,7 +106,7 @@ defmodule Explorer.ExchangeRates.Source do
         parse_http_success_response(body)
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
-        parse_http_error_response(body, status_code)
+        parse_http_error_response(body)
 
       {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
         {:error, "Source redirected"}
@@ -130,22 +116,37 @@ defmodule Explorer.ExchangeRates.Source do
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
+
+      {:error, :nxdomain} ->
+        {:error, "Source is not responsive"}
+
+      {:error, _} ->
+        {:error, "Source unknown response"}
     end
   end
 
   defp parse_http_success_response(body) do
-    body_json = Helper.decode_json(body)
+    body_json = decode_json(body)
 
-    {:ok, body_json}
+    cond do
+      is_map(body_json) ->
+        {:ok, body_json}
+
+      is_list(body_json) ->
+        {:ok, body_json}
+
+      true ->
+        {:ok, body}
+    end
   end
 
-  defp parse_http_error_response(body, status_code) do
-    body_json = Helper.decode_json(body)
+  defp parse_http_error_response(body) do
+    body_json = decode_json(body)
 
     if is_map(body_json) do
-      {:error, "#{status_code}: #{body_json["error"]}"}
+      {:error, body_json["error"]}
     else
-      {:error, "#{status_code}: #{body}"}
+      {:error, body}
     end
   end
 end

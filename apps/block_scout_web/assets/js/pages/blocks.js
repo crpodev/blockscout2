@@ -47,7 +47,6 @@ function baseReducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      // @ts-ignore
       if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
@@ -70,9 +69,8 @@ function withMissingBlocks (reducer) {
     }, {})
 
     const blockNumbers = keys(blockNumbersToItems).map(x => parseInt(x, 10))
-    const minBlock = min(blockNumbers) || 0
-    const maxBlock = max(blockNumbers) || 0
-    if (maxBlock - minBlock > 100) return result
+    const minBlock = min(blockNumbers)
+    const maxBlock = max(blockNumbers)
 
     return Object.assign({}, result, {
       items: rangeRight(minBlock, maxBlock + 1)
@@ -86,7 +84,6 @@ const $uncleListPage = $('[data-page="uncle-list"]')
 const $reorgListPage = $('[data-page="reorg-list"]')
 if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
   window.onbeforeunload = () => {
-    // @ts-ignore
     window.loading = true
   }
 
@@ -123,10 +120,7 @@ export function placeHolderBlock (blockNumber) {
         </span>
         <div>
           <span class="tile-title pr-0 pl-0">${blockNumber}</span>
-          <div class="tile-transactions">${
-            // @ts-ignore
-            window.localized['Block Processing']
-          }</div>
+          <div class="tile-transactions">${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>

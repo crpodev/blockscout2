@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.ContractCode do
   Fetches `contract_code` `t:Explorer.Chain.Address.t/0`.
   """
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
@@ -64,8 +64,7 @@ defmodule Indexer.Fetcher.ContractCode do
           transaction_fields
           |> entry()
           |> reducer.(acc)
-        end,
-        true
+        end
       )
 
     final
@@ -98,7 +97,6 @@ defmodule Indexer.Fetcher.ContractCode do
     Logger.debug("fetching created_contract_code for transactions")
 
     entries
-    |> Enum.uniq()
     |> Enum.map(&params/1)
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do

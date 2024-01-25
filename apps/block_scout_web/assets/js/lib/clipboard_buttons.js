@@ -14,9 +14,7 @@ clipboard.on('success', ({ trigger }) => {
     .attr('data-original-title', 'Copied!')
     .tooltip('show')
 
-  if (originalTitle) {
-    copyButton.attr('data-original-title', originalTitle)
-  }
+  copyButton.attr('data-original-title', originalTitle)
 
   setTimeout(() => {
     copyButton.tooltip('dispose')

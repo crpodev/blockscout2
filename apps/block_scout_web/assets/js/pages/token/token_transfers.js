@@ -45,7 +45,6 @@ export function reducer (state, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      // @ts-ignore
       if (state.channelDisconnected && !window.loading) $el.show()
     }
   }
@@ -53,13 +52,11 @@ const elements = {
 
 if ($('[data-page="token-transfer-list"]')) {
   window.onbeforeunload = () => {
-    // @ts-ignore
     window.loading = true
   }
 
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   const addressHash = $('[data-page="token-details"]')[0].dataset.pageAddressHash
-  // @ts-ignore
   const { blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
 
   connectElements({ store, elements })

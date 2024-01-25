@@ -58,7 +58,6 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
-      // @ts-ignore
       if (state.channelDisconnected && !window.loading) $el.show()
     }
   },
@@ -84,7 +83,6 @@ const elements = {
 const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
   window.onbeforeunload = () => {
-    // @ts-ignore
     window.loading = true
   }
 

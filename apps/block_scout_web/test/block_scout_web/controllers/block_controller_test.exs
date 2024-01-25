@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
     test "returns all reorgs", %{conn: conn} do
       4
       |> insert_list(:block, consensus: false)
-      |> Enum.each(fn b -> insert(:block, number: b.number, consensus: true) end)
+      |> Enum.map(& &1.hash)
 
       conn = get(conn, reorg_path(conn, :reorg), %{"type" => "JSON"})
 
@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
     test "does not include blocks or uncles", %{conn: conn} do
       4
       |> insert_list(:block, consensus: false)
-      |> Enum.each(fn b -> insert(:block, number: b.number, consensus: true) end)
+      |> Enum.map(& &1.hash)
 
       insert(:block)
       uncle = insert(:block, consensus: false)

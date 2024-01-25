@@ -17,13 +17,18 @@ function getTokenIconUrl (chainID, addressHash) {
   if (chainName) {
     return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chainName}/assets/${addressHash}/logo.png`
   } else {
-    return '/images/icons/token_icon_default.svg'
+    return null
   }
 }
 
-function appendTokenIcon ($tokenIconContainer, chainID, addressHash, displayTokenIcons, size) {
+function appendTokenIcon ($tokenIconContainer, chainID, addressHash, foreignChainID, foreignAddressHash, displayTokenIcons, size) {
   const iconSize = size || 20
-  const tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
+  let tokenIconURL = null
+  if (foreignChainID) {
+    tokenIconURL = getTokenIconUrl(foreignChainID.toString(), foreignAddressHash)
+  } else if (chainID) {
+    tokenIconURL = getTokenIconUrl(chainID.toString(), addressHash)
+  }
   if (displayTokenIcons) {
     checkLink(tokenIconURL)
       .then(checkTokenIconLink => {

@@ -12,7 +12,6 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import '../app'
-import { openErrorModal, openSuccessModal, openWarningModal } from '../lib/modals'
 
 const BATCH_THRESHOLD = 6
 const BLOCKS_PER_PAGE = 4
@@ -48,9 +47,6 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      const firstBlock = ($('#indexer-first-block').text() && parseInt($('#indexer-first-block').text(), 10)) || 0
-      const blockCount = (action.msg.blockNumber - firstBlock) + 1
-      // @ts-ignore
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         let pastBlocks
         if (state.blocks.length < BLOCKS_PER_PAGE) {
@@ -65,13 +61,12 @@ function baseReducer (state = initialState, action) {
             action.msg,
             ...pastBlocks
           ],
-          blockCount
+          blockCount: action.msg.blockNumber + 1
         })
       } else {
         return Object.assign({}, state, {
-          // @ts-ignore
           blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
-          blockCount
+          blockCount: action.msg.blockNumber + 1
         })
       }
     }
@@ -176,7 +171,6 @@ let chart
 const elements = {
   '[data-chart="historyChart"]': {
     load () {
-      // @ts-ignore
       chart = window.dashboardChart
     },
     render (_$el, state, oldState) {
@@ -290,7 +284,7 @@ const elements = {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
       const newElements = map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.identifierHash', horizontal: null })
+      listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
   '[data-selector="channel-batching-count"]': {
@@ -393,10 +387,7 @@ export function placeHolderBlock (blockNumber) {
         </span>
         <div>
           <span class="tile-title pr-0 pl-0">${blockNumber}</span>
-          <div class="tile-transactions">${
-            // @ts-ignore
-            window.localized['Block Processing']
-          }</div>
+          <div class="tile-transactions">${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>
@@ -419,26 +410,3 @@ function loadBlocks (store) {
 function bindBlockErrorMessage (store) {
   $('[data-selector="chain-block-list"] [data-selector="error-message"]').on('click', _event => loadBlocks(store))
 }
-
-$('a.ajax').on('click', (event) => {
-  event.preventDefault()
-  event.currentTarget.classList.add('disabled')
-
-  $.get($(event.currentTarget).attr('href'), () => {
-    openSuccessModal('Success', 'Email successfully resent', () => { window.location.reload() })
-  }).fail((error) => {
-    if (error.responseJSON && error.responseJSON.message) {
-      if (error.status === 429) {
-        openWarningModal('Warning', error.responseJSON.message)
-      } else {
-        openErrorModal('Error', error.responseJSON.message, false)
-      }
-    } else {
-      openErrorModal('Error', 'Email resend failed', false)
-    }
-  })
-    .always(() => {
-      event.currentTarget.classList.remove('disabled')
-    })
-}
-)

@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.ChainTest do
     end
   end
 
-  describe "Poison.encode!" do
+  describe "Posion.encode!" do
     test "correctly encodes decimal values" do
       val = Decimal.from_float(5.55)
 

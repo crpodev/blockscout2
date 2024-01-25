@@ -96,10 +96,8 @@ export function connectInfiniteScroll (store) {
 function onScrollBottom (callback) {
   const $window = $(window)
   function infiniteScrollChecker () {
-    const scrollHeight = $(document).height() || 1
-    const windowHeight = $window.height() || 0
-    const windowScrollTop = $window.scrollTop() || 0
-    const scrollPosition = windowHeight + windowScrollTop
+    const scrollHeight = $(document).height()
+    const scrollPosition = $window.height() + $window.scrollTop()
     if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
       callback()
     }

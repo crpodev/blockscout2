@@ -1,6 +1,6 @@
 defmodule Indexer.PendingOpsCleaner do
   @moduledoc """
-  Periodically cleans non-consensus pending ops.
+  Peiodically cleans non-consensus pending ops.
   """
 
   use GenServer

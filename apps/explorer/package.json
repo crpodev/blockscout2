@@ -5,14 +5,14 @@
   },
   "private": true,
   "name": "blockscout",
-  "author": "Blockscout",
+  "author": "POA Network",
   "license": "GPL-3.0",
   "engines": {
-    "node": "18.x",
+    "node": "16.x",
     "npm": "8.x"
   },
   "scripts": {},
   "dependencies": {
-    "solc": "0.8.23"
+    "solc": "0.8.0"
   }
 }

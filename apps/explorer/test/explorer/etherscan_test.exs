@@ -159,12 +159,11 @@ defmodule Explorer.EtherscanTest do
 
     test "loads block_timestamp" do
       address = insert(:address)
-      block = insert(:block)
 
-      %Transaction{} =
+      %Transaction{block: block} =
         :transaction
-        |> insert(from_address: address, block_timestamp: block.timestamp)
-        |> with_block(block)
+        |> insert(from_address: address)
+        |> with_block()
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
 
@@ -371,7 +370,7 @@ defmodule Explorer.EtherscanTest do
 
       for block <- Enum.concat([blocks1, blocks2, blocks3]) do
         2
-        |> insert_list(:transaction, from_address: address, block_timestamp: block.timestamp)
+        |> insert_list(:transaction, from_address: address)
         |> with_block(block)
       end
 
@@ -630,7 +629,7 @@ defmodule Explorer.EtherscanTest do
 
       transaction =
         :transaction
-        |> insert(from_address: address, to_address: nil, block_timestamp: block.timestamp)
+        |> insert(from_address: address, to_address: nil)
         |> with_contract_creation(contract_address)
         |> with_block(block)
 
@@ -804,7 +803,6 @@ defmodule Explorer.EtherscanTest do
         index: internal_transaction.index,
         transaction_hash: internal_transaction.transaction_hash,
         type: internal_transaction.type,
-        call_type: internal_transaction.call_type,
         gas: internal_transaction.gas,
         gas_used: internal_transaction.gas_used,
         error: internal_transaction.error
@@ -1116,13 +1114,11 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "returns all required fields" do
-      block = insert(:block)
-
       transaction =
         %{block: block} =
         :transaction
-        |> insert(block_timestamp: block.timestamp)
-        |> with_block(block)
+        |> insert()
+        |> with_block()
 
       token_transfer =
         insert(:token_transfer,

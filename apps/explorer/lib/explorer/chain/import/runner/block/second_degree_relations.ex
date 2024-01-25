@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import}
-  alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
@@ -47,12 +46,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       |> Map.put_new(:timeout, @timeout)
 
     Multi.run(multi, :block_second_degree_relations, fn repo, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list, insert_options) end,
-        :block_following,
-        :second_degree_relations,
-        :block_second_degree_relations
-      )
+      insert(repo, changes_list, insert_options)
     end)
   end
 
@@ -63,16 +57,13 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout
         }) ::
-          {:ok, nil | %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
+          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list =
-      changes_list
-      |> Enum.sort_by(&{&1.nephew_hash, &1.uncle_hash})
-      |> Enum.dedup()
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
 
     Import.insert_changes_list(repo, ordered_changes_list,
       conflict_target: [:nephew_hash, :uncle_hash],

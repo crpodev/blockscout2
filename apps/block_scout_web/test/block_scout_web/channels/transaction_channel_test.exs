@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.TransactionChannelTest do
     Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
     receive do
-      %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: %{transaction: _transaction} = payload} ->
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
         assert payload.transaction.hash == transaction.hash
     after
       :timer.seconds(5) ->
@@ -33,11 +33,7 @@ defmodule BlockScoutWeb.TransactionChannelTest do
     Notifier.handle_event({:chain_event, :transactions, :realtime, [pending]})
 
     receive do
-      %Phoenix.Socket.Broadcast{
-        topic: ^topic,
-        event: "pending_transaction",
-        payload: %{transaction: _transaction} = payload
-      } ->
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload} ->
         assert payload.transaction.hash == pending.hash
     after
       :timer.seconds(5) ->

@@ -4,13 +4,9 @@ import WalletConnectProvider from '@walletconnect/web3-provider'
 import { compareChainIDs, formatError, showConnectElements, showConnectedToElements } from './common_helpers'
 import { openWarningModal } from '../modals'
 
-// @ts-ignore
-const instanceChainIdStr = document.getElementById('js-chain-id').value
-const instanceChainId = parseInt(instanceChainIdStr, 10)
+const instanceChainId = process.env.CHAIN_ID ? parseInt(`${process.env.CHAIN_ID}`, 10) : 100
 const walletConnectOptions = { rpc: {}, chainId: instanceChainId }
-// @ts-ignore
-const jsonRPC = document.getElementById('js-json-rpc').value
-walletConnectOptions.rpc[instanceChainId] = jsonRPC
+walletConnectOptions.rpc[instanceChainId] = process.env.JSON_RPC ? process.env.JSON_RPC : 'https://dai.poa.network'
 
 // Chosen wallet provider given by the dialog window
 let provider
@@ -104,7 +100,7 @@ export async function disconnect () {
   // If the cached provider is not cleared,
   // WalletConnect will default to the existing session
   // and does not allow to re-scan the QR code with a new wallet.
-  // Depending on your use case you may want or want not his behavior.
+  // Depending on your use case you may want or want not his behavir.
   await web3Modal.clearCachedProvider()
 }
 

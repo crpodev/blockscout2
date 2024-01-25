@@ -1,6 +1,6 @@
 defmodule Explorer.Validator.MetadataRetriever do
   @moduledoc """
-  Consults the configured smart contracts to fetch the validators' metadata
+  Consults the configured smart contracts to fetch the valivators' metadata
   """
 
   alias Explorer.SmartContract.Reader
@@ -15,27 +15,17 @@ defmodule Explorer.Validator.MetadataRetriever do
     end)
   end
 
-  def fetch_validators_list do
-    validators_contract_address = config(:validators_contract_address)
-
-    validators_contract_address_checked =
-      if is_nil(validators_contract_address) and Mix.env() == :test do
-        "0x0000000000000000000000000000000000006001"
-      else
-        validators_contract_address
-      end
-
+  defp fetch_validators_list do
     # b7ab4db5 = keccak256(getValidators())
-    with false <- is_nil(validators_contract_address_checked),
-         %{"b7ab4db5" => {:ok, [validators]}} <-
-           Reader.query_contract(
-             validators_contract_address_checked,
-             contract_abi("validators.json"),
-             %{"b7ab4db5" => []},
-             false
-           ) do
-      validators
-    else
+    case Reader.query_contract(
+           config(:validators_contract_address),
+           contract_abi("validators.json"),
+           %{
+             "b7ab4db5" => []
+           },
+           false
+         ) do
+      %{"b7ab4db5" => {:ok, [validators]}} -> validators
       _ -> []
     end
   end
@@ -65,7 +55,7 @@ defmodule Explorer.Validator.MetadataRetriever do
          expiration_date,
          created_date,
          _updated_date,
-         _min_threshold
+         _min_treshold
        ]) do
     %{
       name: trim_null_bytes(first_name) <> " " <> trim_null_bytes(last_name),

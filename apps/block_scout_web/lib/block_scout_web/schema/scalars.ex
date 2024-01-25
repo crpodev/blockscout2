@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.Schema.Scalars do
 
   See [Ethereum Homestead Documentation](http://ethdocs.org/en/latest/ether.html) for examples of various denominations of wei.
 
-  Etymology of "wei" comes from [Wei Dai (戴維)](https://en.wikipedia.org/wiki/Wei_Dai), a
+  Etymology of "eBan" comes from [Wei Dai (戴維)](https://en.wikipedia.org/wiki/Wei_Dai), a
   [cypherpunk](https://en.wikipedia.org/wiki/Cypherpunk) who came up with b-money, which outlined modern
   cryptocurrencies.
   """
@@ -112,10 +112,5 @@ defmodule BlockScoutWeb.Schema.Scalars do
     value(:create)
     value(:reward)
     value(:selfdestruct)
-  end
-
-  enum :sort_order do
-    value(:asc)
-    value(:desc)
   end
 end

@@ -7,8 +7,7 @@ defmodule Indexer.Fetcher.BlockReward.Supervisor.Case do
         fetcher_arguments,
         flush_interval: 50,
         max_batch_size: 1,
-        max_concurrency: 1,
-        poll: false
+        max_concurrency: 1
       )
 
     [merged_fetcher_arguments]

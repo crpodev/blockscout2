@@ -7,20 +7,22 @@ defmodule Explorer.Chain.PendingBlockOperation do
 
   alias Explorer.Chain.{Block, Hash}
 
-  @required_attrs ~w(block_hash block_number)a
+  @required_attrs ~w(block_hash fetch_internal_transactions)a
 
   @typedoc """
    * `block_hash` - the hash of the block that has pending operations.
+   * `fetch_internal_transactions` - if the block needs its internal transactions fetched (or not)
   """
   @type t :: %__MODULE__{
-          block_hash: Hash.Full.t()
+          block_hash: Hash.Full.t(),
+          fetch_internal_transactions: boolean()
         }
 
   @primary_key false
   schema "pending_block_operations" do
-    timestamps()
+    field(:fetch_internal_transactions, :boolean)
 
-    field(:block_number, :integer)
+    timestamps()
 
     belongs_to(:block, Block, foreign_key: :block_hash, primary_key: true, references: :hash, type: Hash.Full)
   end
@@ -46,10 +48,40 @@ defmodule Explorer.Chain.PendingBlockOperation do
     )
   end
 
-  def block_hashes do
+  def block_hashes(filter \\ nil)
+
+  def block_hashes(filter) when is_nil(filter) do
     from(
       pending_ops in __MODULE__,
       select: pending_ops.block_hash
+    )
+  end
+
+  def block_hashes(filters) when is_list(filters) do
+    true_filters = Keyword.new(filters, &{&1, true})
+
+    from(
+      pending_ops in __MODULE__,
+      where: ^true_filters,
+      select: pending_ops.block_hash
+    )
+  end
+
+  def block_hashes(filter), do: block_hashes([filter])
+
+  def default_on_conflict do
+    from(
+      pending_ops in __MODULE__,
+      update: [
+        set: [
+          fetch_internal_transactions:
+            pending_ops.fetch_internal_transactions or fragment("EXCLUDED.fetch_internal_transactions"),
+          # Don't update `block_hash` as it is used for the conflict target
+          inserted_at: pending_ops.inserted_at,
+          updated_at: fragment("EXCLUDED.updated_at")
+        ]
+      ],
+      where: fragment("EXCLUDED.fetch_internal_transactions <> ?", pending_ops.fetch_internal_transactions)
     )
   end
 end

@@ -1,6 +1,6 @@
 defmodule Explorer.ExchangeRates do
   @moduledoc """
-  Local cache for native coin exchange rates.
+  Local cache for token exchange rates.
 
   Exchange rate data is updated every 10 minutes or CACHE_EXCHANGE_RATES_PERIOD seconds.
   """
@@ -10,10 +10,10 @@ defmodule Explorer.ExchangeRates do
   require Logger
 
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Market
+  alias Explorer.Counters.Helper
   alias Explorer.ExchangeRates.{Source, Token}
 
-  @interval Application.compile_env(:explorer, __MODULE__)[:cache_period]
+  @interval Helper.cache_period_default_in_minutes("CACHE_EXCHANGE_RATES_PERIOD", 10)
   @table_name :exchange_rates
 
   @impl GenServer
@@ -85,11 +85,9 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Lists exchange rates for the tracked tickers.
   """
-  @spec list :: [Token.t()] | nil
+  @spec list :: [Token.t()]
   def list do
-    if enabled?() do
-      list_from_store(store())
-    end
+    list_from_store(store())
   end
 
   @doc """
@@ -124,27 +122,8 @@ defmodule Explorer.ExchangeRates do
   @spec fetch_rates :: Task.t()
   defp fetch_rates do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
-      case Source.fetch_exchange_rates() do
-        {:ok, tokens} -> {:ok, add_coin_info_from_db(tokens)}
-        err -> err
-      end
+      Source.fetch_exchange_rates()
     end)
-  end
-
-  defp add_coin_info_from_db(tokens) do
-    case Market.fetch_recent_history() do
-      [today | _the_rest] ->
-        tvl_from_history = Map.get(today, :tvl)
-
-        tokens
-        |> Enum.map(fn
-          %Token{tvl_usd: nil} = token -> %{token | tvl_usd: tvl_from_history}
-          token -> token
-        end)
-
-      _ ->
-        tokens
-    end
   end
 
   defp list_from_store(:ets) do

@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   that always raise errors interacting with the Smart Contract.
   """
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
@@ -21,34 +21,22 @@ defmodule Indexer.Fetcher.TokenBalance do
   alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
-  alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 100
-  @default_max_concurrency 10
-
-  @timeout :timer.minutes(10)
+  @defaults [
+    flush_interval: 300,
+    max_batch_size: 100,
+    max_concurrency: 10,
+    task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
+  ]
 
   @max_retries 3
 
-  @spec async_fetch([
-          %{
-            token_contract_address_hash: Hash.Address.t(),
-            address_hash: Hash.Address.t(),
-            block_number: non_neg_integer(),
-            token_type: String.t(),
-            token_id: non_neg_integer()
-          }
-        ]) :: :ok
+  @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
-    if TokenBalanceSupervisor.disabled?() do
-      :ok
-    else
-      formatted_params = Enum.map(token_balances, &entry/1)
-
-      BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
-    end
+    formatted_params = Enum.map(token_balances, &entry/1)
+    BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
   end
 
   @doc false
@@ -62,7 +50,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     end
 
     merged_init_opts =
-      defaults()
+      @defaults
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
@@ -72,15 +60,11 @@ defmodule Indexer.Fetcher.TokenBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_token_balances(
-        initial,
-        fn token_balance, acc ->
-          token_balance
-          |> entry()
-          |> reducer.(acc)
-        end,
-        true
-      )
+      Chain.stream_unfetched_token_balances(initial, fn token_balance, acc ->
+        token_balance
+        |> entry()
+        |> reducer.(acc)
+      end)
 
     final
   end
@@ -119,21 +103,17 @@ defmodule Indexer.Fetcher.TokenBalance do
     %{fetched_token_balances: fetched_token_balances, failed_token_balances: _failed_token_balances} =
       1..@max_retries
       |> Enum.reduce_while(%{fetched_token_balances: [], failed_token_balances: retryable_params_list}, fn _x, acc ->
-        {:ok, %{fetched_token_balances: fetched_token_balances, failed_token_balances: failed_token_balances}} =
-          TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
-
-        all_token_balances = %{
-          fetched_token_balances: acc.fetched_token_balances ++ fetched_token_balances,
-          failed_token_balances: failed_token_balances
-        }
+        {:ok,
+         %{fetched_token_balances: _fetched_token_balances, failed_token_balances: failed_token_balances} =
+           token_balances} = TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
 
         if Enum.empty?(failed_token_balances) do
-          {:halt, all_token_balances}
+          {:halt, token_balances}
         else
           failed_token_balances = increase_retries_count(failed_token_balances)
 
           token_balances_updated_retries_count =
-            all_token_balances
+            token_balances
             |> Map.put(:failed_token_balances, failed_token_balances)
 
           {:cont, token_balances_updated_retries_count}
@@ -158,7 +138,7 @@ defmodule Indexer.Fetcher.TokenBalance do
       address_current_token_balances: %{
         params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
       },
-      timeout: @timeout
+      timeout: :infinity
     }
 
     case Chain.import(import_params) do
@@ -186,19 +166,15 @@ defmodule Indexer.Fetcher.TokenBalance do
       if token_balance.token_type do
         token_balance
       else
-        put_token_type_to_balance_object(token_balance)
+        token_type = Chain.get_token_type(token_balance.token_contract_address_hash)
+
+        if token_type do
+          Map.put(token_balance, :token_type, token_type)
+        else
+          token_balance
+        end
       end
     end)
-  end
-
-  defp put_token_type_to_balance_object(token_balance) do
-    token_type = Chain.get_token_type(token_balance.token_contract_address_hash)
-
-    if token_type do
-      Map.put(token_balance, :token_type, token_type)
-    else
-      token_balance
-    end
   end
 
   defp entry(
@@ -236,14 +212,5 @@ defmodule Indexer.Fetcher.TokenBalance do
       token_type: token_type,
       token_id: token_id
     }
-  end
-
-  defp defaults do
-    [
-      flush_interval: 300,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
-    ]
   end
 end

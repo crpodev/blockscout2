@@ -1,4 +1,4 @@
-$footer-background-color: $secondary !default;
+$footer-background-color: #535252 !default;
 $footer-title-color: #fff !default;
 $footer-text-color: rgba(#fff, 0.7) !default;
 $footer-link-color: $footer-text-color !default;
@@ -8,8 +8,8 @@ $footer-logo-height: 28px !default;
 $footer-logo-width: auto !default;
 
 .footer {
-  background: $footer-background-color;
-  color: $footer-text-color;
+  background: #535252;
+  color: #e7e6e6;
   font-size: 12px;
   line-height: 1.67;
   margin: 0;
@@ -42,7 +42,7 @@ $footer-logo-width: auto !default;
 }
 
 .footer-social-icon {
-  color: $footer-social-icon-color;
+  color: #e7e6e6;
   font-size: 22px;
   margin-right: 15px;
   text-decoration: none;
@@ -62,10 +62,10 @@ $footer-logo-width: auto !default;
 }
 
 .footer-link {
-  color: $footer-link-color;
+  color: #e7e6e6;
 
-  &:hover, &:focus {
-    color: $footer-link-color;
+  &:hover {
+    color: #ff6600;
     text-decoration: underline;
   }
 }

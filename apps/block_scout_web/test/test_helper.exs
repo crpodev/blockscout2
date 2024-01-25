@@ -11,29 +11,13 @@ Application.put_env(:wallaby, :base_url, BlockScoutWeb.Endpoint.url())
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
-Bureaucrat.start(
-  writer: Bureaucrat.ApiBlueprintWriter,
-  default_path: "API blueprint.md",
-  env_var: "DOC"
-)
-
-# Bureaucrat.start()
-
-ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
+ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 
 Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Shibarium, :manual)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
-
-Mox.defmock(BlockScoutWeb.TestCaptchaHelper, for: BlockScoutWeb.CaptchaHelper)

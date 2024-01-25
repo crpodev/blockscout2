@@ -1,11 +1,9 @@
 import $ from 'jquery'
-// @ts-ignore
 import AutoComplete from '@tarekraafat/autocomplete.js/dist/autoComplete'
 import { getTextAdData, fetchTextAdData } from './ad'
 import { DateTime } from 'luxon'
 import { appendTokenIcon } from './token_icon'
 import { escapeHtml } from './utils'
-import { commonPath } from './path_helper'
 import xss from 'xss'
 
 const placeHolder = 'Search by address, token symbol, name, transaction hash, or block number'
@@ -15,16 +13,16 @@ const dataSrc = async (query, id) => {
     const searchInput = document
       .getElementById(id)
 
-    searchInput && searchInput.setAttribute('placeholder', 'Loading...')
+    searchInput.setAttribute('placeholder', 'Loading...')
 
     // Fetch External Data Source
     const source = await fetch(
-      `${commonPath}/token-autocomplete?q=${query}`
+      `/token-autocomplete?q=${query}`
     )
     const data = await source.json()
     // Post Loading placeholder text
 
-    searchInput && searchInput.setAttribute('placeholder', placeHolder)
+    searchInput.setAttribute('placeholder', placeHolder)
     // Returns Fetched data
     return data
   } catch (error) {
@@ -41,10 +39,7 @@ const resultsListElement = (list, data) => {
   if (data.results.length > 0) {
     info.innerHTML += `Displaying <strong>${data.results.length}</strong> results`
   } else if (data.query !== '###') {
-    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for `
-    const strong = document.createElement('strong')
-    strong.appendChild(document.createTextNode(data.query))
-    info.appendChild(strong)
+    info.innerHTML += `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`
   }
 
   list.prepend(info)
@@ -104,7 +99,7 @@ const resultItemElement = async (item, data) => {
   const $searchInput = $('#main-search-autocomplete')
   const chainID = $searchInput.data('chain-id')
   const displayTokenIcons = $searchInput.data('display-token-icons')
-  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, displayTokenIcons, 15)
+  appendTokenIcon($tokenIconContainer, chainID, data.value.address_hash, data.value.foreign_chain_id, data.value.foreign_token_hash, displayTokenIcons, 15)
 }
 const config = (id) => {
   return {
@@ -132,8 +127,7 @@ const config = (id) => {
     events: {
       input: {
         focus: () => {
-          // @ts-ignore
-          if (autoCompleteJS && autoCompleteJS.input.value.length) autoCompleteJS.start()
+          if (autoCompleteJS.input.value.length) autoCompleteJS.start()
         }
       }
     }
@@ -147,13 +141,13 @@ const selection = (event) => {
   const selectionValue = event.detail.selection.value
 
   if (selectionValue.type === 'contract' || selectionValue.type === 'address' || selectionValue.type === 'label') {
-    window.location.href = `${commonPath}/address/${selectionValue.address_hash}`
+    window.location = `/address/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'token') {
-    window.location.href = `${commonPath}/tokens/${selectionValue.address_hash}`
+    window.location = `/tokens/${selectionValue.address_hash}`
   } else if (selectionValue.type === 'transaction') {
-    window.location.href = `${commonPath}/tx/${selectionValue.tx_hash}`
+    window.location = `/tx/${selectionValue.tx_hash}`
   } else if (selectionValue.type === 'block') {
-    window.location.href = `${commonPath}/blocks/${selectionValue.block_hash}`
+    window.location = `/blocks/${selectionValue.block_hash}`
   }
 }
 
@@ -161,40 +155,35 @@ const openOnFocus = (event, type) => {
   const query = event.target.value
   if (query) {
     if (type === 'desktop') {
-      // @ts-ignore
-      autoCompleteJS && autoCompleteJS.start(query)
+      autoCompleteJS.start(query)
     } else if (type === 'mobile') {
-      // @ts-ignore
-      autoCompleteJSMobile && autoCompleteJSMobile.start(query)
+      autoCompleteJSMobile.start(query)
     }
   } else {
     getTextAdData()
       .then(({ data: adData, inHouse: _inHouse }) => {
         if (adData) {
           if (type === 'desktop') {
-            // @ts-ignore
-            autoCompleteJS && autoCompleteJS.start('###')
+            autoCompleteJS.start('###')
           } else if (type === 'mobile') {
-            // @ts-ignore
-            autoCompleteJSMobile && autoCompleteJSMobile.start('###')
+            autoCompleteJSMobile.start('###')
           }
         }
       })
   }
 }
 
-const mainSearchAutocompleteObj = document.querySelector('#main-search-autocomplete')
-const mainSearchAutocompleteMobileObj = document.querySelector('#main-search-autocomplete-mobile')
+document.querySelector('#main-search-autocomplete') && document.querySelector('#main-search-autocomplete').addEventListener('selection', function (event) {
+  selection(event)
+})
+document.querySelector('#main-search-autocomplete-mobile') && document.querySelector('#main-search-autocomplete-mobile').addEventListener('selection', function (event) {
+  selection(event)
+})
 
-mainSearchAutocompleteObj && mainSearchAutocompleteObj.addEventListener('selection', function (event) {
-  selection(event)
-})
-mainSearchAutocompleteMobileObj && mainSearchAutocompleteMobileObj.addEventListener('selection', function (event) {
-  selection(event)
-})
-mainSearchAutocompleteObj && mainSearchAutocompleteObj.addEventListener('focus', function (event) {
+document.querySelector('#main-search-autocomplete') && document.querySelector('#main-search-autocomplete').addEventListener('focus', function (event) {
   openOnFocus(event, 'desktop')
 })
-mainSearchAutocompleteMobileObj && mainSearchAutocompleteMobileObj.addEventListener('focus', function (event) {
+
+document.querySelector('#main-search-autocomplete-mobile') && document.querySelector('#main-search-autocomplete-mobile').addEventListener('focus', function (event) {
   openOnFocus(event, 'mobile')
 })

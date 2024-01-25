@@ -4,10 +4,10 @@ defmodule BlockScoutWeb.SocialMedia do
   """
 
   @services %{
-    facebook: "https://www.facebook.com/",
-    instagram: "https://www.instagram.com/",
-    twitter: "https://www.twitter.com/",
-    telegram: "https://t.me/"
+    facebook: "https://www.facebook.com/eronproject",
+    instagram: "https://www.instagram.com/eron_project",
+    twitter: "https://www.twitter.com/EronProject",
+    telegram: "https://t.me/eroncoin"
   }
 
   def links do

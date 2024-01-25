@@ -25,7 +25,7 @@ export function currentModal () {
   return $currentModal
 }
 
-export function openModal ($modal, unclosable, onHideCallback = null) {
+export function openModal ($modal, unclosable) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal
   $('.tooltip').tooltip('hide')
@@ -53,9 +53,6 @@ export function openModal ($modal, unclosable, onHideCallback = null) {
     if (unclosable) {
       modalLocked = true
     }
-  }
-  if (onHideCallback) {
-    $($currentModal).on('hidden.bs.modal', onHideCallback)
   }
 }
 
@@ -119,18 +116,18 @@ export function openWarningModal (title, text) {
   openModal($modal)
 }
 
-export function openSuccessModal (title, text, callback = null) {
+export function openSuccessModal (title, text) {
   const $modal = $('#successStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
-  openModal($modal, false, callback)
+  openModal($modal)
 }
 
 export function openQuestionModal (title, text, acceptCallback = null, exceptCallback = null, acceptText = 'Yes', exceptText = 'No') {
   const $modal = $('#questionStatusModal')
   const $closeButton = $modal.find('.close-modal')
 
-  $closeButton.attr('disabled', 'false')
+  $closeButton.attr('disabled', false)
 
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').text(text)
@@ -152,19 +149,18 @@ export function openQuestionModal (title, text, acceptCallback = null, exceptCal
 
   if (acceptCallback) {
     $accept.on('click', event => {
-      $closeButton.attr('disabled', 'true')
+      $closeButton.attr('disabled', true)
 
       $accept
         .unbind('click')
-        .attr('disabled', 'true')
+        .attr('disabled', true)
         .find('.btn-line-text').html(spinner)
       $except
         .unbind('click')
         .removeAttr('data-dismiss')
-        .attr('disabled', 'true')
+        .attr('disabled', true)
 
       modalLocked = true
-      // @ts-ignore
       acceptCallback($modal, event)
     })
   } else {
@@ -173,19 +169,18 @@ export function openQuestionModal (title, text, acceptCallback = null, exceptCal
 
   if (exceptCallback) {
     $except.on('click', event => {
-      $closeButton.attr('disabled', 'true')
+      $closeButton.attr('disabled', true)
 
       $except
         .unbind('click')
-        .attr('disabled', 'true')
+        .attr('disabled', true)
         .find('.btn-line-text').html(spinner)
       $accept
         .unbind('click')
-        .attr('disabled', 'true')
+        .attr('disabled', true)
         .removeAttr('data-dismiss')
 
       modalLocked = true
-      // @ts-ignore
       exceptCallback($modal, event)
     })
   } else {

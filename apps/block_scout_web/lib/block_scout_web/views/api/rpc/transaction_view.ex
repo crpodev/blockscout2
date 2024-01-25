@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Explorer.Chain.Transaction
 
   def render("gettxinfo.json", %{
         transaction: transaction,
@@ -59,7 +58,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   defp prepare_transaction(transaction, block_height, logs, next_page_params) do
     %{
       "hash" => "#{transaction.hash}",
-      "timeStamp" => "#{DateTime.to_unix(Transaction.block_timestamp(transaction))}",
+      "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
       "blockNumber" => "#{transaction.block_number}",
       "confirmations" => "#{block_height - transaction.block_number}",
       "success" => if(transaction.status == :ok, do: true, else: false),

@@ -71,7 +71,7 @@ defmodule Indexer.BufferedTask do
             flush_interval: nil,
             max_batch_size: nil,
             max_concurrency: nil,
-            poll: true,
+            poll: false,
             metadata: [],
             current_buffer: [],
             bound_queue: %BoundQueue{},
@@ -231,7 +231,7 @@ defmodule Indexer.BufferedTask do
     state = %BufferedTask{
       callback_module: callback_module,
       callback_module_state: Keyword.fetch!(opts, :state),
-      poll: Keyword.get(opts, :poll, true),
+      poll: Keyword.get(opts, :poll, false),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
@@ -341,10 +341,6 @@ defmodule Indexer.BufferedTask do
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
-  defp do_initial_stream(%BufferedTask{init_task: init_task} = state) when is_reference(init_task) do
-    schedule_next_buffer_flush(state)
-  end
-
   defp do_initial_stream(
          %BufferedTask{
            callback_module: callback_module,
@@ -442,8 +438,21 @@ defmodule Indexer.BufferedTask do
   end
 
   # get more work from `init/2`
-  defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}, task_ref_to_batch: tasks} = state)
-       when tasks == %{} do
+  defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
+    do_initial_stream(state)
+  end
+
+  # was shrunk and was out of work, get more work from `init/2`
+  defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
+       when maximum_size != nil do
+    Logger.info(fn ->
+      [
+        "BufferedTask ",
+        process(self()),
+        " ran out of work, but work queue was shrunk to save memory, so restoring lost work from `c:init/2`."
+      ]
+    end)
+
     do_initial_stream(state)
   end
 
@@ -453,12 +462,8 @@ defmodule Indexer.BufferedTask do
   end
 
   defp schedule_next_buffer_flush(state) do
-    if state.flush_interval == :infinity do
-      state
-    else
-      timer = Process.send_after(self(), :flush, state.flush_interval)
-      %{state | flush_timer: timer}
-    end
+    timer = Process.send_after(self(), :flush, state.flush_interval)
+    %{state | flush_timer: timer}
   end
 
   defp shrinkable(options) do

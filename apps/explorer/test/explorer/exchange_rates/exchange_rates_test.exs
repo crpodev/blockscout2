@@ -1,5 +1,5 @@
 defmodule Explorer.ExchangeRatesTest do
-  use Explorer.DataCase
+  use ExUnit.Case, async: false
 
   import Mox
 
@@ -7,16 +7,12 @@ defmodule Explorer.ExchangeRatesTest do
   alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
-  alias Explorer.Market.MarketHistoryCache
 
   @moduletag :capture_log
 
   setup :verify_on_exit!
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
-
     # Use TestSource mock and ets table for this test set
     source_configuration = Application.get_env(:explorer, Explorer.ExchangeRates.Source)
     rates_configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
@@ -28,8 +24,6 @@ defmodule Explorer.ExchangeRatesTest do
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.ExchangeRates.Source, source_configuration)
       Application.put_env(:explorer, Explorer.ExchangeRates, rates_configuration)
-      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
-      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     end)
   end
 
@@ -81,7 +75,6 @@ defmodule Explorer.ExchangeRatesTest do
         id: "test_id",
         last_updated: DateTime.utc_now(),
         market_cap_usd: Decimal.new("1000000.0"),
-        tvl_usd: Decimal.new("2000000.0"),
         name: "test_name",
         symbol: "test_symbol",
         usd_value: Decimal.new("1.0"),

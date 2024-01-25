@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   Finds and updates replaced transactions.
   """
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
@@ -61,8 +61,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
           transaction_fields
           |> pending_entry()
           |> reducer.(acc)
-        end,
-        true
+        end
       )
 
     final
@@ -124,7 +123,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
         Logger.error(fn ->
           [
             "failed to update replaced transactions for transactions: ",
-            Exception.format(:error, reason, __STACKTRACE__)
+            inspect(reason)
           ]
         end)
 

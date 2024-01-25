@@ -5,17 +5,7 @@ defmodule EthereumJSONRPC.Block.ByNumber do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias EthereumJSONRPC.Transport
-
-  @spec request(map(), boolean(), boolean()) :: Transport.request()
-  def request(%{id: id, number: number}, hydrated \\ true, int_to_qty \\ true) do
-    block_number =
-      if int_to_qty do
-        integer_to_quantity(number)
-      else
-        number
-      end
-
-    EthereumJSONRPC.request(%{id: id, method: "eth_getBlockByNumber", params: [block_number, hydrated]})
+  def request(%{id: id, number: number}) do
+    EthereumJSONRPC.request(%{id: id, method: "eth_getBlockByNumber", params: [integer_to_quantity(number), true]})
   end
 end

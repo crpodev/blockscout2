@@ -2,12 +2,11 @@ defmodule BlockScoutWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :block_scout_web
   use Absinthe.Phoenix.Endpoint
 
-  if Application.compile_env(:block_scout_web, :sql_sandbox) do
+  if Application.get_env(:block_scout_web, :sql_sandbox) do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
   socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-  socket("/socket/v2", BlockScoutWeb.UserSocketV2, websocket: [timeout: 45_000])
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -29,6 +28,7 @@ defmodule BlockScoutWeb.Endpoint do
       browserconfig.xml
       mstile-150x150.png
       safari-pinned-tab.svg
+      robots.txt
     ),
     only_matching: ~w(manifest)
   )
@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   plug(Plug.RequestId)
+  plug(Plug.Logger)
 
   plug(
     Plug.Parsers,
@@ -58,16 +59,11 @@ defmodule BlockScoutWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
-
   plug(
     Plug.Session,
-    store: BlockScoutWeb.Plug.RedisCookie,
+    store: :cookie,
     key: "_explorer_key",
-    signing_salt: "iC2ksJHS",
-    same_site: "Lax",
-    http_only: false,
-    domain: Application.compile_env(:block_scout_web, :cookie_domain),
-    max_age: Application.compile_env(:block_scout_web, :session_cookie_ttl)
+    signing_salt: "iC2ksJHS"
   )
 
   use SpandexPhoenix

@@ -4,18 +4,18 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
 
   If we have an unfetched coin balance for that address, it will be synchronously fetched.
   If not we will fetch the coin balance and created a fetched coin balance.
-  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin balance.
+  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin baalnce.
   """
 
   use GenServer
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher
 
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
@@ -50,11 +50,6 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     end
   end
 
-  @spec trigger_historic_fetch(Hash.Address.t(), non_neg_integer()) :: balance_status
-  def trigger_historic_fetch(address_hash, block_number) do
-    do_trigger_historic_fetch(address_hash, block_number)
-  end
-
   ## Callbacks
 
   def child_spec([json_rpc_named_arguments, server_opts]) do
@@ -69,12 +64,10 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     GenServer.start_link(__MODULE__, json_rpc_named_arguments, server_opts)
   end
 
-  @impl true
   def init(json_rpc_named_arguments) do
     {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
   end
 
-  @impl true
   def handle_cast({:fetch_and_update, block_number, address}, state) do
     result = fetch_and_update(block_number, address, state.json_rpc_named_arguments)
 
@@ -85,27 +78,15 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     {:noreply, state}
   end
 
-  @impl true
   def handle_cast({:fetch_and_import, block_number, address}, state) do
     fetch_and_import(block_number, address, state.json_rpc_named_arguments)
 
     {:noreply, state}
   end
 
-  @impl true
   def handle_cast({:fetch_and_import_daily_balances, block_number, address}, state) do
     fetch_and_import_daily_balances(block_number, address, state.json_rpc_named_arguments)
 
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:DOWN, _, :process, _, _}, state) do
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({_ref, _}, state) do
     {:noreply, state}
   end
 
@@ -137,12 +118,6 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
       )
 
     do_trigger_balance_fetch_query(address, latest_block_number, stale_balance_window, latest, latest_by_day)
-  end
-
-  defp do_trigger_historic_fetch(address_hash, block_number) do
-    GenServer.cast(__MODULE__, {:fetch_and_import, block_number, %{hash: address_hash}})
-
-    {:stale, 0}
   end
 
   defp do_trigger_balance_fetch_query(
@@ -244,8 +219,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   defp stale_balance_window(block_number) do
     case AverageBlockTime.average_block_time() do
       {:error, :disabled} ->
-        fallback_threshold_in_blocks = Application.get_env(:indexer, __MODULE__)[:fallback_threshold_in_blocks]
-        block_number - fallback_threshold_in_blocks
+        {:error, :no_average_block_time}
 
       duration ->
         average_block_time =
@@ -257,7 +231,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
           {:error, :empty_database}
         else
           threshold = Application.get_env(:indexer, __MODULE__)[:threshold]
-          block_number - div(threshold, average_block_time)
+          block_number - div(:timer.minutes(threshold), average_block_time)
         end
     end
   end

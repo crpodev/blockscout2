@@ -5,10 +5,9 @@ defmodule BlockScoutWeb.Application do
 
   use Application
 
-  alias BlockScoutWeb.API.APILogger
-  alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
+  alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
 
   def start(_type, _args) do
     import Supervisor
@@ -16,29 +15,15 @@ defmodule BlockScoutWeb.Application do
     Prometheus.Instrumenter.setup()
     Prometheus.Exporter.setup()
 
-    APILogger.message(
-      "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
-    )
-
     # Define workers and child supervisors to be supervised
     children = [
       # Start the endpoint when the application starts
       {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
       child_spec(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
-      {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
       {RealtimeEventHandler, name: RealtimeEventHandler},
-      {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter},
-      {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter}
+      {StakingEventHandler, name: StakingEventHandler},
+      {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]

@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.Log do
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.
    * `"blockNumber"` - `t:EthereumJSONRPC.quantity/0` for the block number this transaction is in.
    * `"data"` - Data containing non-indexed log parameter
-   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index position in the block.
+   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index positon in the block.
    * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
    * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.
@@ -33,7 +33,8 @@ defmodule EthereumJSONRPC.Log do
       ...>     "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
       ...>     "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>     "transactionIndex" => 0,
-      ...>     "transactionLogIndex" => 0
+      ...>     "transactionLogIndex" => 0,
+      ...>     "type" => "mined"
       ...>   }
       ...> )
       %{
@@ -46,8 +47,11 @@ defmodule EthereumJSONRPC.Log do
         index: 0,
         second_topic: nil,
         third_topic: nil,
-        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+        type: "mined"
       }
+
+  Geth does not supply a `"type"`
 
       iex> EthereumJSONRPC.Log.elixir_to_params(
       ...>   %{
@@ -78,15 +82,17 @@ defmodule EthereumJSONRPC.Log do
       }
 
   """
-  def elixir_to_params(%{
-        "address" => address_hash,
-        "blockNumber" => block_number,
-        "blockHash" => block_hash,
-        "data" => data,
-        "logIndex" => index,
-        "topics" => topics,
-        "transactionHash" => transaction_hash
-      }) do
+  def elixir_to_params(
+        %{
+          "address" => address_hash,
+          "blockNumber" => block_number,
+          "blockHash" => block_hash,
+          "data" => data,
+          "logIndex" => index,
+          "topics" => topics,
+          "transactionHash" => transaction_hash
+        } = elixir
+      ) do
     %{
       address_hash: address_hash,
       block_number: block_number,
@@ -96,6 +102,7 @@ defmodule EthereumJSONRPC.Log do
       transaction_hash: transaction_hash
     }
     |> put_topics(topics)
+    |> put_type(elixir)
   end
 
   @doc """
@@ -111,7 +118,8 @@ defmodule EthereumJSONRPC.Log do
       ...>   "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
       ...>   "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>   "transactionIndex" => "0x0",
-      ...>   "transactionLogIndex" => "0x0"
+      ...>   "transactionLogIndex" => "0x0",
+      ...>   "type" => "mined"
       ...>   }
       ...> )
       %{
@@ -123,10 +131,11 @@ defmodule EthereumJSONRPC.Log do
         "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
         "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
         "transactionIndex" => 0,
-        "transactionLogIndex" => 0
+        "transactionLogIndex" => 0,
+        "type" => "mined"
       }
 
-  Geth includes a `"removed"` key
+  Geth and Parity >= 1.11.4 includes a `"removed"` key
 
       iex> EthereumJSONRPC.Log.to_elixir(
       ...>   %{
@@ -162,9 +171,8 @@ defmodule EthereumJSONRPC.Log do
     Enum.into(log, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, _} = entry)
-       when key in ~w(address blockHash data removed topics transactionHash timestamp),
-       do: entry
+  defp entry_to_elixir({key, _} = entry) when key in ~w(address blockHash data removed topics transactionHash type),
+    do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do
     if is_nil(quantity) do
@@ -181,4 +189,10 @@ defmodule EthereumJSONRPC.Log do
     |> Map.put(:third_topic, Enum.at(topics, 2))
     |> Map.put(:fourth_topic, Enum.at(topics, 3))
   end
+
+  defp put_type(params, %{"type" => type}) do
+    Map.put(params, :type, type)
+  end
+
+  defp put_type(params, _), do: params
 end

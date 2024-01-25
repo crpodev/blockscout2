@@ -10,9 +10,8 @@ defmodule Explorer.Chain.InternalTransaction.Type do
    * `:create`
    * `:reward`
    * `:selfdestruct`
-   * `:stop`
   """
-  @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop
+  @type t :: :call | :create | :create2 | :reward | :selfdestruct
 
   @doc """
   Casts `term` to `t:t/0`
@@ -64,7 +63,6 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   def cast("create2"), do: {:ok, :create2}
   def cast("reward"), do: {:ok, :reward}
   def cast("selfdestruct"), do: {:ok, :selfdestruct}
-  def cast("stop"), do: {:ok, :stop}
   def cast(_), do: :error
 
   @doc """
@@ -99,7 +97,6 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   def dump(:create2), do: {:ok, "create2"}
   def dump(:reward), do: {:ok, "reward"}
   def dump(:selfdestruct), do: {:ok, "selfdestruct"}
-  def dump(:stop), do: {:ok, "stop"}
   def dump(_), do: :error
 
   @doc """
@@ -134,7 +131,6 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   def load("create2"), do: {:ok, :create2}
   def load("reward"), do: {:ok, :reward}
   def load("selfdestruct"), do: {:ok, :selfdestruct}
-  def load("stop"), do: {:ok, :stop}
   # deprecated
   def load("suicide"), do: {:ok, :selfdestruct}
   def load(_), do: :error

@@ -97,20 +97,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                   %Explorer.Chain.Address.CurrentTokenBalance{
                     address_hash: ^address_hash,
                     block_number: ^block_number,
-                    token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_1,
-                    token_id: ^token_id_1
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
-                    token_contract_address_hash: ^token_contract_address_hash,
-                    value: ^value_2,
-                    token_id: ^token_id_2
-                  },
-                  %Explorer.Chain.Address.CurrentTokenBalance{
-                    address_hash: ^address_hash,
-                    block_number: ^block_number,
                     token_contract_address_hash: ^token_erc_20_contract_address_hash,
                     value: ^value_3,
                     token_id: ^token_id_3
@@ -121,6 +107,20 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                     token_contract_address_hash: ^token_erc_721_contract_address_hash,
                     value: ^value_5,
                     token_id: nil
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    value: ^value_1,
+                    token_id: ^token_id_1
+                  },
+                  %Explorer.Chain.Address.CurrentTokenBalance{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    value: ^value_2,
+                    token_id: ^token_id_2
                   }
                 ],
                 address_current_token_balances_update_token_holder_counts: [
@@ -172,7 +172,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      block_number: block_number,
                      token_contract_address_hash: token_erc_721.contract_address_hash,
                      value: value_4,
-                     value_fetched_at: DateTime.add(DateTime.utc_now(), -1),
+                     value_fetched_at: DateTime.utc_now(),
                      token_id: token_id_4,
                      token_type: "ERC-721"
                    },
@@ -218,8 +218,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
           address_hash: address.hash,
           block_number: 2,
           token_contract_address_hash: token.contract_address_hash,
-          value: Decimal.new(200),
-          value_fetched_at: DateTime.utc_now()
+          value: Decimal.new(200)
         },
         options
       )
@@ -301,8 +300,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
-                   value: value,
-                   value_fetched_at: DateTime.utc_now()
+                   value: value
                  },
                  options
                )
@@ -346,8 +344,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: block_number,
-                   value: value,
-                   value_fetched_at: DateTime.utc_now()
+                   value: value
                  },
                  options
                )
@@ -407,15 +404,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                      address_hash: non_holder_becomes_holder_address_hash,
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
-                     value: non_holder_becomes_holder_value,
-                     value_fetched_at: DateTime.utc_now()
+                     value: non_holder_becomes_holder_value
                    },
                    %{
                      address_hash: holder_becomes_non_holder_address_hash,
                      token_contract_address_hash: token_contract_address_hash,
                      block_number: block_number,
-                     value: holder_becomes_non_holder_value,
-                     value_fetched_at: DateTime.utc_now()
+                     value: holder_becomes_non_holder_value
                    }
                  ],
                  options

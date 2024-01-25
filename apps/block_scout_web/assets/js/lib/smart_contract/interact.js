@@ -2,14 +2,12 @@ import $ from 'jquery'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals'
 import { compareChainIDs, formatError, formatTitleAndError, getContractABI, getCurrentAccountPromise, getMethodInputs, prepareMethodArgs } from './common_helpers'
 import BigNumber from 'bignumber.js'
-import { commonPath } from '../path_helper'
 
-export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer, isCustomABI) => {
+export const queryMethod = (isWalletEnabled, url, $methodId, args, type, functionName, $responseContainer) => {
   const data = {
     function_name: functionName,
     method_id: $methodId.val(),
-    type,
-    is_custom_abi: isCustomABI
+    type
   }
 
   data.args_count = args.length
@@ -60,11 +58,11 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
             methodToCall
               .on('error', function (error) {
                 const titleAndError = formatTitleAndError(error)
-                const message = titleAndError.message + (titleAndError.txHash ? `<br><a href="${commonPath}/tx/${titleAndError.txHash}">More info</a>` : '')
+                const message = titleAndError.message + (titleAndError.txHash ? `<br><a href="/tx/${titleAndError.txHash}">More info</a>` : '')
                 openErrorModal(titleAndError.title.length ? titleAndError.title : `Error in sending transaction for method "${functionName}"`, message, false)
               })
               .on('transactionHash', function (txHash) {
-                onTransactionHash(txHash, functionName)
+                onTransactionHash(txHash, $element, functionName)
               })
           } else {
             const txParams = {
@@ -77,7 +75,7 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
               params: [txParams]
             })
               .then(function (txHash) {
-                onTransactionHash(txHash, functionName)
+                onTransactionHash(txHash, $element, functionName)
               })
               .catch(function (error) {
                 openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
@@ -90,8 +88,8 @@ export const callMethod = (isWalletEnabled, $functionInputs, explorerChainId, $f
     })
 }
 
-function onTransactionHash (txHash, functionName) {
-  openModalWithMessage($('#pending-contract-write'), true, txHash)
+function onTransactionHash (txHash, $element, functionName) {
+  openModalWithMessage($element.find('#pending-contract-write'), true, txHash)
   const getTxReceipt = (txHash) => {
     window.ethereum.request({
       method: 'eth_getTransactionReceipt',
@@ -99,7 +97,7 @@ function onTransactionHash (txHash, functionName) {
     })
       .then(txReceipt => {
         if (txReceipt) {
-          const successMsg = `Successfully sent <a href="${commonPath}/tx/${txHash}">transaction</a> for method "${functionName}"`
+          const successMsg = `Successfully sent <a href="/tx/${txHash}">transaction</a> for method "${functionName}"`
           openSuccessModal('Success', successMsg)
           clearInterval(txReceiptPollingIntervalId)
         }

@@ -118,7 +118,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   describe "read_only_functions/1" do
-    test "fetches the smart contract read only functions with the blockchain value with provided smart_contract" do
+    test "fetches the smart contract read only functions with the blockchain value" do
       smart_contract =
         insert(
           :smart_contract,
@@ -146,14 +146,14 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      response = Reader.read_only_functions(smart_contract, smart_contract.address_hash, nil)
+      response = Reader.read_only_functions(smart_contract.address_hash)
 
       assert [
                %{
                  "constant" => true,
                  "inputs" => [],
                  "name" => "get",
-                 "outputs" => [%{"type" => "uint256", "value" => 0}],
+                 "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -162,7 +162,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"type" => "bool"}],
+                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -229,8 +229,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       response =
         Reader.read_only_functions_proxy(
           proxy_smart_contract.address_hash,
-          "0x" <> implementation_contract_address_hash_string,
-          nil
+          "0x" <> implementation_contract_address_hash_string
         )
 
       assert [
@@ -238,7 +237,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [],
                  "name" => "get",
-                 "outputs" => [%{"type" => "uint256", "value" => 0}],
+                 "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -247,7 +246,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "constant" => true,
                  "inputs" => [%{"name" => "x", "type" => "uint256"}],
                  "name" => "with_arguments",
-                 "outputs" => [%{"type" => "bool"}],
+                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
                  "payable" => _,
                  "stateMutability" => _,
                  "type" => _
@@ -261,42 +260,19 @@ defmodule Explorer.SmartContract.ReaderTest do
       smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
-      blockchain_get_function_mock()
 
       assert [
                %{
                  "type" => "uint256",
                  "value" => 0
                }
-             ] =
-               Reader.query_function(
-                 smart_contract.address_hash,
-                 %{method_id: "6d4ce63c", args: []},
-                 :regular,
-                 nil,
-                 false
-               )
-
-      assert [
-               %{
-                 "type" => "uint256",
-                 "value" => 0
-               }
-             ] =
-               Reader.query_function_with_custom_abi(
-                 smart_contract.address_hash,
-                 %{method_id: "6d4ce63c", args: []},
-                 nil,
-                 false,
-                 smart_contract.abi
-               )
+             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular, false)
     end
 
     test "nil arguments is treated as []" do
       smart_contract = insert(:smart_contract, contract_code_md5: "123")
 
       blockchain_get_function_mock()
-      blockchain_get_function_mock()
 
       assert [
                %{
@@ -304,27 +280,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "value" => 0
                }
              ] =
-               Reader.query_function(
-                 smart_contract.address_hash,
-                 %{method_id: "6d4ce63c", args: nil},
-                 :regular,
-                 nil,
-                 false
-               )
-
-      assert [
-               %{
-                 "type" => "uint256",
-                 "value" => 0
-               }
-             ] =
-               Reader.query_function_with_custom_abi(
-                 smart_contract.address_hash,
-                 %{method_id: "6d4ce63c", args: []},
-                 nil,
-                 false,
-                 smart_contract.abi
-               )
+               Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular, false)
     end
   end
 

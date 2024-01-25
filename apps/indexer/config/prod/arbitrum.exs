@@ -1,14 +1,7 @@
 import Config
 
-~w(config config_helper.exs)
-|> Path.join()
-|> Code.eval_file()
-
-hackney_opts = ConfigHelper.hackney_options()
-timeout = ConfigHelper.timeout(5)
-
 config :indexer,
-  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "5s"),
+  block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
     transport:
       if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
@@ -18,11 +11,7 @@ config :indexer,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:8545",
-      fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
-      method_to_url: [
-        eth_call: ConfigHelper.eth_call_url("http://localhost:8545")
-      ],
-      http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
+      http_options: [recv_timeout: :timer.minutes(5), timeout: :timer.minutes(5), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Arbitrum
   ],

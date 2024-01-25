@@ -73,7 +73,6 @@ export function asyncReducer (state = asyncInitialState, action) {
       if (action.nextPageParams !== null) {
         const pageNumber = parseInt(action.nextPageParams.pageNumber)
         if (typeof action.path !== 'undefined') {
-          // @ts-ignore
           history.replaceState({}, null, URI(action.path).query(humps.decamelizeKeys(action.nextPageParams)))
         }
         delete action.nextPageParams.pageNumber
@@ -145,7 +144,7 @@ export const elements = {
       if (state.itemKey) {
         const container = $el[0]
         const newElements = map(state.items, (item) => $(item)[0])
-        listMorph(container, newElements, { key: state.itemKey, horizontal: null })
+        listMorph(container, newElements, { key: state.itemKey })
         return
       }
 
@@ -224,11 +223,11 @@ export const elements = {
  * values passed here will overwrite the values on asyncInitialState.
  *
  * itemKey: it will be added to the state as the key for diffing the elements and
- * adding or removing with the correct animation. Check list_morph.js for more information.
+ * adding or removing with the correct animation. Check list_morph.js for more informantion.
  */
 export function createAsyncLoadStore (reducer, initialState, itemKey) {
   const state = merge(asyncInitialState, initialState)
-  const store = createStore(reduceReducers(state, asyncReducer, reducer))
+  const store = createStore(reduceReducers(asyncReducer, reducer, state))
 
   if (typeof itemKey !== 'undefined') {
     store.dispatch({
@@ -335,7 +334,6 @@ function pagesNumbersGenerate (pagesLimit, $container, currentPageNumber, loadin
     resultHTML += renderPaginationElements(pagesLimit - groupedPagesNumber, pagesLimit, currentPageNumber, loading)
   } else {
     resultHTML += renderPaginationElement(1, currentPageNumber === 1, loading)
-    // @ts-ignore
     const step = parseInt(groupedPagesNumber / 2)
     if (currentPageNumber - step - 1 === 2) {
       resultHTML += renderPaginationElement(2, currentPageNumber === 2, loading)

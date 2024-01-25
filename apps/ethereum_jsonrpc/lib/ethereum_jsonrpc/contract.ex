@@ -56,7 +56,6 @@ defmodule EthereumJSONRPC.Contract do
       |> case do
         {:ok, responses} -> responses
         {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
-        {:error, {reason, _request_url}} -> raise to_string(reason)
         {:error, reason} when is_atom(reason) -> raise Atom.to_string(reason)
         {:error, error} -> raise error
       end
@@ -219,8 +218,6 @@ defmodule EthereumJSONRPC.Contract do
       other -> other
     end
   end
-
-  defp format_error(nil), do: {:error, ""}
 
   defp format_error(message) when is_binary(message) do
     {:error, message}

@@ -1,3 +1,5 @@
 # BlockScout Docker Integration
 
-For usage instructions and ENV variables, see the [docker integration documentation](https://docs.blockscout.com/for-developers/deployment/docker-compose-deployment).
+This integration is not production ready, and should be used for local BlockScout deployment only.
+
+For usage instructions and ENV variables, see the [docker integration documentation](https://docs.blockscout.com/for-developers/information-and-settings/docker-integration-local-use-only).

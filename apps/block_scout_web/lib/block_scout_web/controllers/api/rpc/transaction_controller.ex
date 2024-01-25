@@ -4,9 +4,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
-
-  @api_true [api?: true]
+  alias Explorer.Chain.Transaction
 
   def gettxinfo(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
@@ -14,7 +12,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
            transaction_from_hash(transaction_hash),
          paging_options <- paging_options(params) do
-      logs = Chain.transaction_to_logs(transaction_hash, Keyword.merge(paging_options, @api_true))
+      from_api = true
+      logs = Chain.transaction_to_logs(transaction_hash, from_api, paging_options)
       {logs, next_page} = split_list_by_page(logs)
 
       transaction_updated =
@@ -75,7 +74,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   defp transaction_from_hash(transaction_hash) do
-    case Chain.hash_to_transaction(transaction_hash, DenormalizationHelper.extend_block_necessity([], :required)) do
+    case Chain.hash_to_transaction(transaction_hash, necessity_by_association: %{block: :required}) do
       {:error, :not_found} -> {:transaction, :error}
       {:ok, transaction} -> {:transaction, {:ok, transaction}}
     end

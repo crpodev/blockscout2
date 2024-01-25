@@ -18,23 +18,34 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   import Plug.Conn
   import Phoenix.Controller, only: [put_view: 2]
 
-  alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.AccessHelpers
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.API.RPC.RPCView
   alias Phoenix.Controller
   alias Plug.Conn
 
-  def init(opts) do
-    opts
-  end
+  APILogger.message(
+    "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
+  )
+
+  APILogger.message(
+    "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
+  )
+
+  APILogger.message(
+    "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
+  )
+
+  def init(opts), do: opts
 
   def call(%Conn{params: %{"module" => module, "action" => action}} = conn, translations) do
-    with {:valid_api_request, true} <- {:valid_api_request, valid_api_request_path(conn)},
+    with true <- valid_api_request_path(conn),
          {:ok, {controller, write_actions}} <- translate_module(translations, module),
          {:ok, action} <- translate_action(action),
          true <- action_accessed?(action, write_actions),
-         :ok <- AccessHelper.check_rate_limit(conn),
+         :ok <- AccessHelpers.check_rate_limit(conn),
          {:ok, conn} <- call_controller(conn, controller, action) do
+      APILogger.log(conn)
       conn
     else
       {:error, :no_action} ->
@@ -45,9 +56,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
         |> halt()
 
       {:error, error} ->
-        APILogger.error(fn ->
-          ["Error while calling RPC action", inspect(error, limit: :infinity, printable_limit: :infinity)]
-        end)
+        Logger.error(fn -> ["Error while calling RPC action", inspect(error)] end)
 
         conn
         |> put_status(500)
@@ -56,14 +65,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
         |> halt()
 
       :rate_limit_reached ->
-        AccessHelper.handle_rate_limit_deny(conn)
-
-      {:valid_api_request, false} ->
-        conn
-        |> put_status(404)
-        |> put_view(RPCView)
-        |> Controller.render(:error, error: "Not found")
-        |> halt()
+        AccessHelpers.handle_rate_limit_deny(conn)
 
       _ ->
         conn
@@ -126,8 +128,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   defp valid_api_request_path(conn) do
-    if conn.request_path == "/api" || conn.request_path == "/api/" || conn.request_path == "/api/v1" ||
-         conn.request_path == "/api/v1/" do
+    if conn.request_path == "/api" || conn.request_path == "/api/v1" do
       true
     else
       false
