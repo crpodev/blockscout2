@@ -6,14 +6,14 @@ $dashboard-banner-gradient-end: lighten(
 $dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-price: #ff6600 !default;
 $dashboard-line-color-price-dark-theme: #ff6600 !default;
-$dashboard-line-color-market: $secondary !default;
-$dashboard-line-color-market-dark-theme: $secondary !default;
-$dashboard-line-color-transactions: $warning !default;
-$dashboard-line-color-transactions-dark-theme: $warning !default;
-$dashboard-stats-item-label-color: #fff !default;
-$dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
-$dashboard-banner-chart-legend-label-color: #fff !default;
-$dashboard-banner-chart-legend-value-color: $dashboard-stats-item-value-color !default;
+$dashboard-line-color-market: #ff6600 !default;
+$dashboard-line-color-market-dark-theme: #ff6600 !default;
+$dashboard-line-color-transactions: #ff6600 !default;
+$dashboard-line-color-transactions-dark-theme: #ff6600 !default;
+$dashboard-stats-item-label-color: #e7e6e6 !default;
+$dashboard-stats-item-value-color: rgba(#e7e6e6, 0.8) !default;
+$dashboard-banner-chart-legend-label-color: #e7e6e6 !default;
+$dashboard-banner-chart-legend-value-color: #e7e6e6 !default;
 $dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
@@ -133,25 +133,25 @@ $dashboard-banner-chart-axis-font-color-alt: #333;
 
     &.price-per-day {
       &::before {
-        background-color: $dashboard-line-color-price;
+        background-color: #ff6600;
       }
     }
 
     &.gas-price-oracle {
       &::before {
-        background-color: $dashboard-line-color-price;
+        background-color: #ff6600;
       }
     }
 
     &.market-cap-per-day {
       &::before {
-        background-color:$dashboard-line-color-market;
+        background-color:#ff6600;
       }
     }
 
     &.tx-per-day {
       &::before {
-        background-color: $dashboard-line-color-transactions;
+        background-color: #ff6600;
       }
     }
   }

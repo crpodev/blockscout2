@@ -19,7 +19,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   @max_block_number :infinity
 
   def import_emission_rewards(chain_spec) do
-    if Application.get_env(:explorer, GenesisData)[:emission_format] == "POA" do
+    if Application.get_env(:explorer, GenesisData)[:emission_format] == "eRon" do
       PoaEmissionImporter.import_emission_rewards()
     else
       import_rewards_from_chain_spec(chain_spec)

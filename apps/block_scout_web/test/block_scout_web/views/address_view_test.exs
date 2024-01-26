@@ -372,7 +372,7 @@ defmodule BlockScoutWeb.AddressViewTest do
 
   describe "address_page_title/1" do
     test "uses the Smart Contract name when the contract is verified" do
-      smart_contract = build(:smart_contract, name: "POA")
+      smart_contract = build(:smart_contract, name: "eRon")
       address = build(:address, smart_contract: smart_contract)
 
       assert AddressView.address_page_title(address) == "POA (#{address})"
