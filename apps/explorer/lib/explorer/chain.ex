@@ -7250,7 +7250,7 @@ defmodule Explorer.Chain do
         "1" ->
           "ethereum"
 
-        "1725" ->
+        "3766" ->
           "eRon"
 
         "100" ->
