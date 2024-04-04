@@ -121,15 +121,14 @@
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
               </span>
-              <%= if apps_menu == true do %>
+              <%= if apps_menu = true do %>
                 <%= gettext("Apps") %>
-              <% else %>
                 <%= gettext("Stakes") %>
               <% end %>
             </a>
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
               <%= if staking_enabled_in_menu do %>
-                <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
+                <a class="dropdown-item" href="https://staking.eronscan.com">
                   <%= gettext("Staking") %>
                   <span class="bs-label secondary right from-dropdown">New</span>
                 </a>
